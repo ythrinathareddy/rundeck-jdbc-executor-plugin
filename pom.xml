@@ -15,8 +15,8 @@
     </distributionManagement>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -24,14 +24,14 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-jsr223</artifactId>
-            <version>3.0.8</version>
+            <version>3.0.9</version> <!-- Updated to match Groovy version 3.0.9 -->
         </dependency>
 
         <!-- Groovy SQL -->
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-sql</artifactId>
-            <version>3.0.8</version>
+            <version>3.0.9</version> <!-- Updated to match Groovy version 3.0.9 -->
         </dependency>
     </dependencies>
 </project>
