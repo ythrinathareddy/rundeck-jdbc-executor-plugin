@@ -1,7 +1,7 @@
 #ci pipeline start, code checkout, test, build, scan, publish
 name: action test
-on: [push,workflow_dispatch]
-jobs:  
+#on: [push,workflow_dispatch]
+#jobs:  
   build:
     runs-on: ubuntu-latest
     permissions: 
