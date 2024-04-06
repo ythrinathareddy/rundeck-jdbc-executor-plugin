@@ -1,8 +1,8 @@
 package com.github.strdn.rundeck.plugin.jdbcexecutor;
 
 public enum DBTypes {
-    ORACLE("oracle.jdbc.driver.OracleDriver"),
-    MYSQL("com.mysql.jdbc.Driver"),
+    ORACLE("oracle.jdbc.driver.OracleDriver"), // Verify if there's a newer class name for newer Oracle drivers
+    MYSQL("com.mysql.cj.jdbc.Driver"),
     MSSQL("com.microsoft.sqlserver.jdbc.SQLServerDriver"),
     POSTGRES("org.postgresql.Driver");
 
