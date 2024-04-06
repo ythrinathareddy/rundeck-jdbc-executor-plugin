@@ -1,29 +1,53 @@
-version = '0.2'
-defaultTasks 'clean','build'
-apply plugin: 'java'
-apply plugin: 'idea'
-sourceCompatibility = 1.8
-ext.rundeckPluginVersion = '1.2'
+plugins {
+    id 'java'
+    id 'application' // If you're creating an application
+}
+
+// Adjust this to match the JDK you're using
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
+version = '1.0.0' // Update your plugin version as needed
+sourceCompatibility = '11'
+targetCompatibility = '11'
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
-    compile([group: 'org.rundeck', name: 'rundeck-core', version: '3.3.7-20201208',ext:'jar'],
-            [group: 'org.rundeck', name: 'rundeck-storage-api', version: '3.3.7-20201208',ext:'jar'],
-            'commons-lang:commons-lang:2.6',
-            'org.codehaus.groovy:groovy-sql:2.4.21', 
-            'org.codehaus.groovy:groovy-jsr223:2.4.21'
-    )
+    // Update these versions based on the latest Rundeck and dependencies you need
+    implementation 'org.rundeck:rundeck-core:5.x.x' // Replace with the actual latest version
+    implementation 'org.rundeck:rundeck-storage-api:5.x.x' // Replace with the actual latest version
+    
+    implementation 'commons-lang:commons-lang:3.12.0' // Updated to commons-lang3
+    implementation 'org.codehaus.groovy:groovy:3.0.9' // Groovy version compatible with JDK 17
+    implementation 'org.codehaus.groovy:groovy-sql:3.0.9' // Ensuring compatibility
+    implementation 'org.codehaus.groovy:groovy-jsr223:3.0.9'
 }
 
-ext.pluginClassNames='com.github.strdn.rundeck.plugin.jdbcexecutor.GroovySQLCommandPlugin,com.github.strdn.rundeck.plugin.jdbcexecutor.GroovySQLScriptNodeStepPlugin'
 jar {
     manifest {
-        attributes 'Rundeck-Plugin-Classnames': pluginClassNames
-        attributes 'Rundeck-Plugin-File-Version': version
-        attributes 'Rundeck-Plugin-Version': rundeckPluginVersion, 'Rundeck-Plugin-Archive': 'true'
+        attributes(
+            'Rundeck-Plugin-Classnames': 'com.yourcompany.rundeck.plugin.YourPluginClassName',
+            'Rundeck-Plugin-File-Version': version,
+            'Rundeck-Plugin-Version': '1.0.0', // Plugin version
+            'Rundeck-Plugin-Archive': 'true'
+        )
+    }
+}
+
+// Ensure your source and resources are included correctly
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+        }
+        resources {
+            srcDir 'src/main/resources'
+        }
     }
 }
