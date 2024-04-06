@@ -25,4 +25,4 @@ jobs:
         name: rundeck-plugin
         path: build/libs/*.jar
       env:
-          GITHUB_TOKEN: ${{ secrets.TESTSECRET }}
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
