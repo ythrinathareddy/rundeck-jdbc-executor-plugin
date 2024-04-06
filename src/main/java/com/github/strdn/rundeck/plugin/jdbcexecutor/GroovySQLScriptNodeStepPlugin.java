@@ -16,86 +16,92 @@ import com.dtolabs.rundeck.plugins.descriptions.TextArea;
 import com.dtolabs.rundeck.plugins.step.NodeStepPlugin;
 import com.dtolabs.rundeck.plugins.step.PluginStepContext;
 import com.dtolabs.rundeck.plugins.util.DescriptionBuilder;
-import org.apache.commons.lang.StringUtils;
 
 import javax.script.ScriptException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 
 import static com.github.strdn.rundeck.plugin.jdbcexecutor.GroovySQLStatementExecutor.executeStatement;
 
 @Plugin(name = GroovySQLScriptNodeStepPlugin.SERVICE_PROVIDER_NAME, service = ServiceNameConstants.WorkflowNodeStep)
-@PluginDescription(title = "Groovy SQL Script Executor",description = "Groovy SQL Script Executor")
+@PluginDescription(title = "Groovy SQL Script Executor", description = "Executes a Groovy SQL script using JDBC.")
 public class GroovySQLScriptNodeStepPlugin implements NodeStepPlugin, DescriptionBuilder.Collaborator {
 
-    public static final String FILE_SOURCE="File";
-    public static final String INLINE_SOURCE="Inline";
-    @PluginProperty(title="Script source",
-                    description = "Execute stored file or inline script",
-                    required = true,
-                    defaultValue = FILE_SOURCE)
+    public static final String FILE_SOURCE = "File";
+    public static final String INLINE_SOURCE = "Inline";
+
+    @PluginProperty(title = "Script source",
+            description = "Select the source of the script",
+            required = true,
+            defaultValue = FILE_SOURCE)
     @SelectValues(values = {FILE_SOURCE, INLINE_SOURCE})
     private String scriptSource;
 
-    @PluginProperty(title = "Groovy SQL script path", description = "file path", required = false)
+    @PluginProperty(title = "Groovy SQL script path",
+            description = "Provide the path to the Groovy SQL script file",
+            required = false)
     private String scriptPath;
 
-    @PluginProperty(title = "Groovy SQL inline script", description = "Groovy SQL inline script")
+    @PluginProperty(title = "Groovy SQL inline script",
+            description = "Enter the Groovy SQL script directly",
+            required = false)
     @TextArea
     @RenderingOption(key = StringRenderingConstants.DISPLAY_TYPE_KEY, value = "CODE")
     private String scriptBody;
 
-    @PluginProperty(title = "Script args", description = "Groovy SQL script arguments")
+    @PluginProperty(title = "Script arguments",
+            description = "Provide any arguments needed for the script",
+            required = false)
     private String scriptArgs;
 
-    static final String SERVICE_PROVIDER_NAME = "com.github.strdn.rundeck.plugin.jdbcexecutor.GroovySQLScriptNodeStepPlugin";
+    public static final String SERVICE_PROVIDER_NAME = "GroovySQLScriptNodeStepPlugin";
 
     public void buildWith(DescriptionBuilder builder) {
         builder
             .name(SERVICE_PROVIDER_NAME)
-            .title("Groovy SQL script executor")
-            .description("Execute locally stored groovy SQL script using jdbc")
+            .title("Groovy SQL Script Executor")
+            .description("Executes a Groovy SQL script using JDBC.")
             .build();
     }
 
     @Override
     public void executeNodeStep(PluginStepContext context, Map<String, Object> configuration, INodeEntry entry)
-                throws NodeStepException {
-        Path scriptFilePath = null;
-        if (scriptSource.equals(FILE_SOURCE)) {
-            if (StringUtils.isBlank(scriptPath))
-                throw new NodeStepException("File execution selected but path is not set", StepFailureReason.ConfigurationFailure, entry.getNodename());
-
-            scriptFilePath = Paths.get(scriptPath).toAbsolutePath();
-            if (!(scriptFilePath.toFile().isFile() && scriptFilePath.toFile().canRead())) {
-                throw new NodeStepException("Cannot read script file: " + scriptPath, StepFailureReason.IOFailure, entry.getNodename());
-            }
-        }
-
-        if (scriptSource.equals(INLINE_SOURCE) && scriptBody.trim().isEmpty()) {
-            throw new NodeStepException("Inline script execution selected but is empty", StepFailureReason.ConfigurationFailure, entry.getNodename());
-        }
-
+            throws NodeStepException {
         try {
-            if (scriptSource.equals(INLINE_SOURCE)) {
-                executeStatement(
-                        new SqlConnectionBuilder(context.getExecutionContext(), entry, context.getFramework()).build(),
-                        scriptBody, scriptArgs
-                );
+            if (FILE_SOURCE.equals(scriptSource)) {
+                executeFileScript(context, entry);
+            } else if (INLINE_SOURCE.equals(scriptSource)) {
+                executeInlineScript(context, entry);
             } else {
-                executeStatement(
-                        new SqlConnectionBuilder(context.getExecutionContext(), entry, context.getFramework()).build(),
-                        scriptFilePath, scriptArgs
-                );
+                throw new NodeStepException("Invalid script source", StepFailureReason.ConfigurationFailure, entry.getNodename());
             }
-        } catch (ConfigurationException sqlcbce) {
-            throw new NodeStepException(sqlcbce, StepFailureReason.ConfigurationFailure, entry.getNodename());
-        } catch (ScriptException | PluginException sepe) {
-            throw new NodeStepException(sepe, StepFailureReason.PluginFailed, entry.getNodename());
-        } catch (IOException esioe) {
-            throw new NodeStepException(esioe, StepFailureReason.IOFailure, entry.getNodename());
+        } catch (Exception e) {
+            throw new NodeStepException(e, StepFailureReason.PluginFailed, entry.getNodename());
         }
+    }
+
+    private void executeFileScript(PluginStepContext context, INodeEntry entry) throws IOException, ScriptException, ConfigurationException {
+        if (scriptPath == null || scriptPath.trim().isEmpty()) {
+            throw new ConfigurationException("Script path is not provided.");
+        }
+
+        Path scriptFilePath = Path.of(scriptPath);
+        if (!Files.isRegularFile(scriptFilePath) || !Files.isReadable(scriptFilePath)) {
+            throw new IOException("Cannot read script file: " + scriptPath);
+        }
+
+        executeStatement(new SqlConnectionBuilder(context.getExecutionContext(), entry, context.getFramework()).build(),
+                scriptFilePath.toAbsolutePath().toString(), scriptArgs);
+    }
+
+    private void executeInlineScript(PluginStepContext context, INodeEntry entry) throws ScriptException, ConfigurationException {
+        if (scriptBody == null || scriptBody.trim().isEmpty()) {
+            throw new ConfigurationException("Inline script is empty.");
+        }
+
+        executeStatement(new SqlConnectionBuilder(context.getExecutionContext(), entry, context.getFramework()).build(),
+                scriptBody, scriptArgs);
     }
 }
